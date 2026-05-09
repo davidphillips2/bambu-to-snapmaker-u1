@@ -1,0 +1,18 @@
+name: Sync with Upstream
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Once a day
+  workflow_dispatch:      # Manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync Upstream
+        uses: a2u/github-action-repo-sync@v2
+        with:
+          source_repo: "thadius83/bambu-to-snapmaker-u1"
+          source_branch: "main"
+          destination_branch: "main"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
