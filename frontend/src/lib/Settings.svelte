@@ -7,6 +7,7 @@
     applyRules: boolean;
     insertSwapPauses: boolean;
     advancedOverrides: string;
+    remapFilaments: boolean;
     autoMatched?: boolean;
     disabled?: boolean;
   }
@@ -17,6 +18,7 @@
     applyRules = $bindable(),
     insertSwapPauses = $bindable(),
     advancedOverrides = $bindable(),
+    remapFilaments = $bindable(),
     autoMatched = false,
     disabled = false,
   }: Props = $props();
@@ -65,6 +67,15 @@
       <span class="toggle-label">
         <span class="toggle-title">Insert filament swap pauses</span>
         <span class="subtle">For &gt;4 colour prints: pause before a toolhead switches filament so you can re-spool. Works best when colours are separated by clear layer boundaries — avoid if colours are interleaved throughout the print.</span>
+      </span>
+    </label>
+
+    <label class="toggle">
+      <input type="checkbox" bind:checked={remapFilaments} {disabled} />
+      <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      <span class="toggle-label">
+        <span class="toggle-title">Remap filaments</span>
+        <span class="subtle">Replace detected filaments with profiles from your filament_profiles/ directory</span>
       </span>
     </label>
 

@@ -586,6 +586,7 @@ async def api_convert(
     preserve_color_painting: bool = Form(True),
     advanced_overrides: str = Form("{}"),
     slot_map: str = Form("{}"),
+    filament_remaps: str = Form("{}"),
     insert_swap_pauses: str = Form("false"),
 ) -> JSONResponse:
     if not file.filename or not file.filename.lower().endswith(".3mf"):
@@ -607,6 +608,15 @@ async def api_convert(
         raise HTTPException(400, detail=f"bad slot_map: {err}") from err
     if any(v < 0 or v >= _MAX_TOOLHEADS for v in parsed_slot_map.values()):
         raise HTTPException(400, detail="slot_map values must be 0–3")
+
+    # Parse interactive filament remaps (slot_index → profile_name).
+    parsed_filament_remaps: dict[int, str] = {}
+    try:
+        _fr = (filament_remaps or "").strip()
+        raw_remaps = _json.loads(_fr) if _fr and _fr != "{}" else {}
+        parsed_filament_remaps = {int(k): str(v) for k, v in raw_remaps.items()}
+    except (ValueError, TypeError) as err:
+        raise HTTPException(400, detail=f"bad filament_remaps: {err}") from err
 
     try:
         descriptor = resolve_profile(
@@ -633,6 +643,7 @@ async def api_convert(
         advanced_overrides=overrides,
         slot_map=parsed_slot_map,
         insert_swap_pauses=insert_swap_pauses.lower() == "true",
+        filament_remaps=parsed_filament_remaps,
     )
 
     rules = load_rules(RULES_DIR)

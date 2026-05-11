@@ -149,6 +149,7 @@ export interface ConvertOptions {
   preserve_color_painting: boolean;
   advanced_overrides: string;
   slot_map?: Record<number, number>;
+  filament_remaps?: Record<number, string>;
   insert_swap_pauses: boolean;
 }
 
@@ -161,12 +162,17 @@ export async function convert(opts: ConvertOptions): Promise<ConvertResult> {
   form.append('preserve_color_painting', String(opts.preserve_color_painting));
   form.append('advanced_overrides', opts.advanced_overrides);
   form.append('slot_map', JSON.stringify(opts.slot_map ?? {}));
+  form.append('filament_remaps', JSON.stringify(opts.filament_remaps ?? {}));
   form.append('insert_swap_pauses', String(opts.insert_swap_pauses));
   return handle(await fetch('/api/convert', { method: 'POST', body: form }));
 }
 
 export async function listBambuPrinters(): Promise<Array<{id: string; name: string}>> {
   return handle(await fetch('/api/bambu-profiles'));
+}
+
+export async function listFilamentProfiles(): Promise<Array<{id: string; name: string}>> {
+  return handle(await fetch('/api/filament-profiles'));
 }
 
 export async function convertBambu(opts: { file: File; reference_profile: string; clamp_speeds: boolean; insert_swap_pauses: boolean }): Promise<ConvertResult> {

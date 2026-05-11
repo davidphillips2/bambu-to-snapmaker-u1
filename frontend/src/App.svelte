@@ -7,7 +7,7 @@
   import Feedback from './lib/Feedback.svelte';
   import RuleEditor from './lib/RuleEditor.svelte';
   import Help from './lib/Help.svelte';
-  import { listProfiles, suggestProfile, convert, type ProfileDescriptor, type ConvertResult } from './lib/api';
+  import { listProfiles, suggestProfile, convert, listFilamentProfiles, type ProfileDescriptor, type ConvertResult } from './lib/api';
   import ToolheadAssign from './lib/ToolheadAssign.svelte';
 
   // ---- routing (hash-based, zero deps) ------------------------------------
@@ -55,6 +55,9 @@
     } catch (e: unknown) {
       profilesError = e instanceof Error ? e.message : String(e);
     }
+    try {
+      filamentProfileOptions = await listFilamentProfiles();
+    } catch { /* non-critical */ }
   });
 
   // ---- converter state machine --------------------------------------------
@@ -82,6 +85,9 @@
   let insertSwapPauses = $state(false);
   let showSlotModal = $state(false);
   let advancedOverrides = $state('{}');
+  let remapFilaments = $state(false);
+  let filamentRemaps = $state<Record<number, string>>({});
+  let filamentProfileOptions = $state<Array<{id: string; name: string}>>([]);
 
   // ---- conversion progress simulation ------------------------------------
   let convertProgress = $state(0);
@@ -192,6 +198,7 @@
         insert_swap_pauses: insertSwapPauses,
         advanced_overrides: advancedOverrides,
         slot_map: Object.keys(slotMap).length > 0 ? slotMap : undefined,
+        filament_remaps: Object.keys(filamentRemaps).length > 0 ? filamentRemaps : undefined,
       });
       _stopProgress();
       convertProgress = 100;
@@ -220,6 +227,7 @@
     isOversized = false;
     sourceSlicer = null;
     paintedSlotMap = {};
+    filamentRemaps = {};
   }
 </script>
 
@@ -412,6 +420,7 @@
                 bind:applyRules
                 bind:insertSwapPauses
                 bind:advancedOverrides
+                bind:remapFilaments
                 autoMatched={profileAutoMatched}
                 disabled={phase === 'converting' || analysing}
               />
@@ -421,13 +430,40 @@
                   <span class="swatch-label-title">Detected filaments</span>
                   <div class="swatch-row">
                     {#each detectedFilaments as f}
-                      <div
-                        class="swatch-chip"
-                        style="background:{f.colour ?? '#888'}"
-                        title="{f.settings_id ?? f.filament_type ?? 'Unknown'}"
-                      ></div>
+                      <div class="swatch-item">
+                        <div
+                          class="swatch-chip"
+                          style="background:{f.colour ?? '#888'}"
+                          title="{f.settings_id ?? f.filament_type ?? 'Unknown'}"
+                        ></div>
+                        {#if remapFilaments && filamentProfileOptions.length > 0}
+                          <select
+                            class="remap-select"
+                            onchange={(e) => {
+                              const v = (e.currentTarget as HTMLSelectElement).value;
+                              if (v) filamentRemaps[f.index] = v;
+                              else delete filamentRemaps[f.index];
+                              filamentRemaps = {...filamentRemaps};
+                            }}
+                          >
+                            <option value="">Keep</option>
+                            {#each filamentProfileOptions as fp (fp.id)}
+                              <option value={fp.id} selected={filamentRemaps[f.index] === fp.id}>
+                                {fp.name}
+                              </option>
+                            {/each}
+                          </select>
+                        {:else}
+                          <span class="subtle swatch-name">{f.settings_id ?? f.filament_type ?? 'Unknown'}</span>
+                        {/if}
+                      </div>
                     {/each}
                   </div>
+                  {#if remapFilaments && filamentProfileOptions.length === 0}
+                    <p class="subtle" style="font-size:12px;margin:8px 0 0">
+                      No filament profiles available. Drop .3mf files into your filament_profiles/ directory.
+                    </p>
+                  {/if}
                 </div>
               {/if}
 
@@ -765,7 +801,10 @@
   .filament-swatches { display: flex; flex-direction: column; gap: 8px; }
   .swatch-label-title { font-size: 12px; font-weight: 500; color: var(--text-muted); }
   .swatch-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .swatch-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .swatch-chip { width: 28px; height: 28px; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
+  .swatch-name { font-size: 10px; text-align: center; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .remap-select { font-size: 10px; max-width: 80px; padding: 2px 4px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); }
 
   .status-toast {
     display: flex;

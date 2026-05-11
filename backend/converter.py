@@ -346,23 +346,38 @@ def convert(
         log.info("STAGE  supports: tree→normal(auto) — layer_heights_profile.txt present (VLH conflict)")
 
     # 7. filament remap (swap filament identity from .3mf profiles)
-    if settings.apply_rules and rules and filament_profiles_dir:
-        from rules_engine import find_matches as _find_matches
-        ctx = FilamentContext.from_settings(source_cfg)
-        for rule, evidence in _find_matches(rules, ctx):
-            if not rule.filament_remap:
-                continue
-            slot_index = evidence.get("filament_index", 0)
+    if filament_profiles_dir:
+        # 7a. rule-based remaps
+        if settings.apply_rules and rules:
+            from rules_engine import find_matches as _find_matches
+            ctx = FilamentContext.from_settings(source_cfg)
+            for rule, evidence in _find_matches(rules, ctx):
+                if not rule.filament_remap:
+                    continue
+                slot_index = evidence.get("filament_index", 0)
+                try:
+                    fp_keys = load_filament_profile(rule.filament_remap, filament_profiles_dir)
+                    merged = remap_filament_slot(merged, slot_index, fp_keys)
+                    log.info(
+                        "REMAP  %r → %r (slot %d): %d keys from filament profile",
+                        rule.name, rule.filament_remap, slot_index, len(fp_keys),
+                    )
+                except Exception as exc:
+                    log.warning("REMAP  %r: failed to load filament profile %r: %s",
+                                rule.name, rule.filament_remap, exc)
+
+        # 7b. interactive remaps (per-slot from UI)
+        for slot_index, profile_name in settings.filament_remaps.items():
             try:
-                fp_keys = load_filament_profile(rule.filament_remap, filament_profiles_dir)
+                fp_keys = load_filament_profile(profile_name, filament_profiles_dir)
                 merged = remap_filament_slot(merged, slot_index, fp_keys)
                 log.info(
-                    "REMAP  %r → %r (slot %d): %d keys from filament profile",
-                    rule.name, rule.filament_remap, slot_index, len(fp_keys),
+                    "REMAP  interactive slot %d → %r: %d keys from filament profile",
+                    slot_index, profile_name, len(fp_keys),
                 )
             except Exception as exc:
-                log.warning("REMAP  %r: failed to load filament profile %r: %s",
-                            rule.name, rule.filament_remap, exc)
+                log.warning("REMAP  interactive slot %d: failed to load %r: %s",
+                            slot_index, profile_name, exc)
 
     # 8. rules engine
     if settings.apply_rules and rules:

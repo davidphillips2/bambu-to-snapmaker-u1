@@ -33,6 +33,8 @@ class ConversionSettings(BaseModel):
     slot_map: dict[int, int] = Field(default_factory=dict)
     # Insert M600 pauses when a physical toolhead must swap filament mid-print.
     insert_swap_pauses: bool = False
+    # Interactive filament remaps: slot_index → filament profile name.
+    filament_remaps: dict[int, str] = Field(default_factory=dict)
 
 
 # -------- diff events --------------------------------------------------------
