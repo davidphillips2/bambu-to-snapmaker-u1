@@ -121,6 +121,8 @@
       </div>
     </div>
   {/if}
+
+  {#if diff.sections.length === 0}
     <p class="muted">No changes recorded — file may already be U1-compatible.</p>
   {:else}
     <div class="sections">
