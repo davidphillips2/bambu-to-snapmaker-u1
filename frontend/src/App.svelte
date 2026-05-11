@@ -328,6 +328,8 @@
           diff={result.diff}
           jobId={result.job_id}
           downloadName={result.download_name}
+          filaments={detectedFilaments}
+          remaps={filamentRemaps}
           onreset={reset}
         />
 

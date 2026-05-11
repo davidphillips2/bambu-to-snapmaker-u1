@@ -2,14 +2,24 @@
   import type { DiffPayload } from './api';
   import { downloadUrl } from './api';
 
+  interface FilamentInfo {
+    index: number;
+    settings_id: string | null;
+    filament_type: string | null;
+    vendor: string | null;
+    colour: string | null;
+  }
+
   interface Props {
     diff: DiffPayload;
     jobId: string;
     downloadName: string;
+    filaments?: FilamentInfo[];
+    remaps?: Record<number, string>;
     onreset: () => void;
   }
 
-  let { diff, jobId, downloadName, onreset }: Props = $props();
+  let { diff, jobId, downloadName, filaments = [], remaps = {}, onreset }: Props = $props();
 
   let expanded = $state<Set<number>>(new Set());
 
@@ -80,7 +90,7 @@
       <span class="pill accent">⚙ {counts.rules_matched} rules matched</span>
     {/if}
     {#if counts.slot_remaps}
-      <span class="pill">⇆ {counts.slot_remaps} filament slots</span>
+      <span class="pill">⇆ {counts.slot_remaps} slots remapped</span>
     {/if}
     {#if counts.slice_artifacts_stripped}
       <span class="pill">✕ {counts.slice_artifacts_stripped} caches stripped</span>
@@ -93,7 +103,24 @@
     {/if}
   </div>
 
-  {#if diff.sections.length === 0}
+  {#if filaments.length > 0}
+    <div class="filaments-summary card card-padded">
+      <span class="filaments-title">Filaments in output</span>
+      <div class="filaments-row">
+        {#each filaments as f}
+          <div class="filament-item">
+            <div class="filament-swatch" style="background:{f.colour ?? '#888'}"></div>
+            <div class="filament-info">
+              <span class="filament-name">{f.settings_id ?? f.filament_type ?? 'Unknown'}</span>
+              {#if remaps[f.index]}
+                <span class="filament-remapped">→ {remaps[f.index]}</span>
+              {/if}
+            </div>
+          </div>
+        {/each}
+      </div>
+    </div>
+  {/if}
     <p class="muted">No changes recorded — file may already be U1-compatible.</p>
   {:else}
     <div class="sections">
@@ -469,4 +496,13 @@
     border-top: 1px solid var(--border);
   }
   .download-footer .subtle { margin: 0; }
+
+  .filaments-summary { display: flex; flex-direction: column; gap: 10px; }
+  .filaments-title { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+  .filaments-row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .filament-item { display: flex; align-items: center; gap: 8px; }
+  .filament-swatch { width: 24px; height: 24px; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--border) 60%, transparent); flex-shrink: 0; }
+  .filament-info { display: flex; flex-direction: column; gap: 1px; }
+  .filament-name { font-size: 12px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .filament-remapped { font-size: 10px; color: var(--accent); }
 </style>
