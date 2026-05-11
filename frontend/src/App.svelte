@@ -802,8 +802,8 @@
   .swatch-row { display: flex; flex-wrap: wrap; gap: 6px; }
   .swatch-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .swatch-chip { width: 28px; height: 28px; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
-  .swatch-name { font-size: 10px; text-align: center; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .remap-select { font-size: 10px; max-width: 80px; padding: 2px 4px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+  .swatch-name { font-size: 10px; text-align: center; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .remap-select { font-size: 10px; max-width: 120px; padding: 2px 4px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); }
 
   .status-toast {
     display: flex;
