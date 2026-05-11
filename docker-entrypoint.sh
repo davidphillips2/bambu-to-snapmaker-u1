@@ -10,8 +10,16 @@ set -eu
 UID_TARGET="${APP_UID:-1000}"
 GID_TARGET="${APP_GID:-1000}"
 
-for d in /app/tmp /app/tmp_failed /app/feedback /app/user_profiles /app/rules /app/bambu_profiles; do
+for d in /app/tmp /app/tmp_failed /app/feedback /app/profiles /app/user_profiles /app/rules /app/bambu_profiles; do
     [ -d "$d" ] && chown -R "${UID_TARGET}:${GID_TARGET}" "$d" 2>/dev/null || true
 done
+
+# Seed bind-mounted profiles with built-in ones, skip files that already exist.
+if [ -d /app/profiles.builtin ]; then
+    mkdir -p /app/profiles
+    cp -n /app/profiles.builtin/* /app/profiles/ 2>/dev/null || true
+    chown -R "${UID_TARGET}:${GID_TARGET}" /app/profiles 2>/dev/null || true
+    rm -rf /app/profiles.builtin
+fi
 
 exec /usr/bin/tini -- gosu "${UID_TARGET}:${GID_TARGET}" "$@"

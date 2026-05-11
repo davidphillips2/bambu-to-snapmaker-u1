@@ -32,7 +32,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application sources.
 COPY backend/ ./backend/
-COPY profiles/ ./profiles/
+COPY profiles/ ./profiles.builtin/
 
 # Pull in the built frontend.
 COPY --from=frontend-build /build/frontend/dist ./frontend/dist
