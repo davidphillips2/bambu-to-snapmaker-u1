@@ -90,7 +90,7 @@
       <span class="pill accent">⚙ {counts.rules_matched} rules matched</span>
     {/if}
     {#if counts.slot_remaps}
-      <span class="pill">⇆ {counts.slot_remaps} slots remapped</span>
+      <span class="pill">⇆ {counts.slot_remaps} filament slots</span>
     {/if}
     {#if counts.slice_artifacts_stripped}
       <span class="pill">✕ {counts.slice_artifacts_stripped} caches stripped</span>

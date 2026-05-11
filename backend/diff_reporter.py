@@ -151,7 +151,7 @@ def summarise(report: DiffReport) -> list[dict[str, Any]]:
         sections.append(
             {
                 "title": "Filament slots",
-                "summary": f"{len(report.slot_remaps)} filaments remapped",
+                "summary": f"{len(report.slot_remaps)} filaments mapped to U1 toolheads",
                 "details": [s.model_dump() for s in report.slot_remaps],
             }
         )
