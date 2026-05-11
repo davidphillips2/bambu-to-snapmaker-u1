@@ -436,6 +436,7 @@
                           style="background:{f.colour ?? '#888'}"
                           title="{f.settings_id ?? f.filament_type ?? 'Unknown'}"
                         ></div>
+                        <span class="subtle swatch-name">{f.settings_id ?? f.filament_type ?? 'Unknown'}</span>
                         {#if remapFilaments && filamentProfileOptions.length > 0}
                           <select
                             class="remap-select"
@@ -453,8 +454,6 @@
                               </option>
                             {/each}
                           </select>
-                        {:else}
-                          <span class="subtle swatch-name">{f.settings_id ?? f.filament_type ?? 'Unknown'}</span>
                         {/if}
                       </div>
                     {/each}
