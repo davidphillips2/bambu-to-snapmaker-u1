@@ -10,7 +10,7 @@ set -eu
 UID_TARGET="${APP_UID:-1000}"
 GID_TARGET="${APP_GID:-1000}"
 
-for d in /app/tmp /app/tmp_failed /app/feedback /app/profiles /app/user_profiles /app/rules /app/bambu_profiles; do
+for d in /app/tmp /app/tmp_failed /app/feedback /app/profiles /app/user_profiles /app/rules /app/bambu_profiles /app/filament_profiles; do
     [ -d "$d" ] && chown -R "${UID_TARGET}:${GID_TARGET}" "$d" 2>/dev/null || true
 done
 

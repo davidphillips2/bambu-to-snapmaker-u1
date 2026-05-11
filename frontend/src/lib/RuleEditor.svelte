@@ -32,6 +32,7 @@ match:
   filament_settings_id_contains: null
   filament_vendor: null
   filament_type: null
+filament_remap: null  # profile filename stem from /api/filament-profiles (no .3mf)
 overrides:
   outer_wall_speed: 150
 priority: 0
@@ -154,7 +155,7 @@ enabled: true
               <span class:muted={!r.enabled}>{r.name}</span>
               {#if !r.enabled}<span class="pill">disabled</span>{/if}
             </div>
-            <div class="rule-item-meta subtle">p{r.priority} · {Object.keys(r.overrides).length} overrides</div>
+            <div class="rule-item-meta subtle">p{r.priority} · {Object.keys(r.overrides).length} overrides{#if r.filament_remap} · remap: {r.filament_remap}{/if}</div>
           </li>
         {/each}
       </ul>

@@ -138,6 +138,7 @@ class RuleDefinition(BaseModel):
     description: str = ""
     match: RuleMatchConditions = Field(default_factory=RuleMatchConditions)
     overrides: dict[str, Any] = Field(default_factory=dict)
+    filament_remap: str | None = None
     priority: int = 0
     enabled: bool = True
 

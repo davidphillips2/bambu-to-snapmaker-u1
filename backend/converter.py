@@ -45,8 +45,8 @@ from metadata_helpers import (
     translate_prusa_mmu_paint,
 )
 from models import ConversionSettings, DiffReport, RuleDefinition, SlotRemapEvent
-from profile_loader import read_project_settings, read_source_settings
-from rules_engine import FilamentContext, apply_rules
+from profile_loader import read_project_settings, read_source_settings, load_filament_profile
+from rules_engine import FilamentContext, apply_rules, remap_filament_slot
 from swap_pauses import insert_swap_pauses
 
 # Keys that must come from the U1 reference profile — strictly hardware identity.
@@ -166,6 +166,7 @@ def convert(
     settings: ConversionSettings,
     rules: list[RuleDefinition],
     preserve_bambu_metadata: bool = False,
+    filament_profiles_dir: Path | None = None,
 ) -> ConversionResult:
     """Run the full pipeline. Returns the output path + DiffReport.
 
@@ -344,7 +345,26 @@ def convert(
         merged["support_type"] = "normal(auto)"
         log.info("STAGE  supports: tree→normal(auto) — layer_heights_profile.txt present (VLH conflict)")
 
-    # 7. rules engine
+    # 7. filament remap (swap filament identity from .3mf profiles)
+    if settings.apply_rules and rules and filament_profiles_dir:
+        from rules_engine import find_matches as _find_matches
+        ctx = FilamentContext.from_settings(source_cfg)
+        for rule, evidence in _find_matches(rules, ctx):
+            if not rule.filament_remap:
+                continue
+            slot_index = evidence.get("filament_index", 0)
+            try:
+                fp_keys = load_filament_profile(rule.filament_remap, filament_profiles_dir)
+                merged = remap_filament_slot(merged, slot_index, fp_keys)
+                log.info(
+                    "REMAP  %r → %r (slot %d): %d keys from filament profile",
+                    rule.name, rule.filament_remap, slot_index, len(fp_keys),
+                )
+            except Exception as exc:
+                log.warning("REMAP  %r: failed to load filament profile %r: %s",
+                            rule.name, rule.filament_remap, exc)
+
+    # 8. rules engine
     if settings.apply_rules and rules:
         ctx = FilamentContext.from_settings(source_cfg)
         merged, rule_events = apply_rules(merged, rules, ctx)
@@ -362,14 +382,14 @@ def convert(
         log.info("STAGE  rules: skipped (apply_rules=%s, n_rules=%d)",
                  settings.apply_rules, len(rules))
 
-    # 8. advanced per-key overrides
+    # 9. advanced per-key overrides
     for k, v in settings.advanced_overrides.items():
         merged[k] = v
         diff.record_advanced_override(k, v)
     if settings.advanced_overrides:
         log.info("STAGE  advanced-overrides: %d keys", len(settings.advanced_overrides))
 
-    # 9. filament array normalisation — preserve source slot count exactly.
+    # 10. filament array normalisation — preserve source slot count exactly.
     # For Bambu-to-Bambu the source count is authoritative (AMS handles any
     # number of slots).  For U1: if the user supplied an explicit slot_map
     # they are committing to a 4-toolhead output; otherwise pass all source
@@ -448,7 +468,7 @@ def convert(
                     merged[_key] = _slot_pattern * n_target
         log.info("STAGE  filament-stride-fix: done (n_ref_slots=%d)", n_ref_slots)
 
-    # 10. optional swap-pause insertion for >4 colour prints
+    # 11. optional swap-pause insertion for >4 colour prints
     custom_gcode_xml_override: str | None = None
     if settings.insert_swap_pauses:
         with zipfile.ZipFile(source_path) as _zcheck:

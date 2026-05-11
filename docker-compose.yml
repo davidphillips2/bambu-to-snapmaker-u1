@@ -19,6 +19,9 @@ services:
       # Bambu target reference profiles (drop additional Bambu .3mf reference
       # profiles here to enable the Bambu→Bambu alpha flow).
       - ./bambu_profiles:/app/bambu_profiles
+      # Filament profiles for filament_remap rules (drop .3mf with target
+      # filament settings, referenced by filename stem in rules).
+      - ./filament_profiles:/app/filament_profiles
       # Converted output files (inspect directly from host).
       - ./tmp:/app/tmp
       # Failed conversion workdirs — retained when RETAIN_FAILED_FILES=true.

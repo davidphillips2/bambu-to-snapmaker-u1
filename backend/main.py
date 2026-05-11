@@ -98,6 +98,9 @@ USER_PROFILES_DIR = Path(
 BAMBU_PROFILES_DIR = Path(
     os.environ.get("U13MF_BAMBU_PROFILES", APP_ROOT / "bambu_profiles")
 )
+FILAMENT_PROFILES_DIR = Path(
+    os.environ.get("U13MF_FILAMENT_PROFILES", APP_ROOT / "filament_profiles")
+)
 RULES_DIR = Path(os.environ.get("U13MF_RULES", APP_ROOT / "rules"))
 TMP_DIR = Path(os.environ.get("U13MF_TMP", APP_ROOT / "tmp"))
 FAILED_TMP_DIR = Path(os.environ.get("U13MF_FAILED_TMP", APP_ROOT / "tmp_failed"))
@@ -114,7 +117,7 @@ FAILED_CLEANUP_AFTER_SECONDS = int(
 )
 RETAIN_FAILED_FILES = os.environ.get("RETAIN_FAILED_FILES", "false").lower() in ("1", "true", "yes")
 
-for d in (PROFILES_DIR, USER_PROFILES_DIR, BAMBU_PROFILES_DIR, RULES_DIR, TMP_DIR, FAILED_TMP_DIR, FEEDBACK_DIR):
+for d in (PROFILES_DIR, USER_PROFILES_DIR, BAMBU_PROFILES_DIR, FILAMENT_PROFILES_DIR, RULES_DIR, TMP_DIR, FAILED_TMP_DIR, FEEDBACK_DIR):
     d.mkdir(parents=True, exist_ok=True)
 
 
@@ -303,6 +306,29 @@ def api_list_bambu_profiles() -> list[dict[str, str]]:
     return result
 
 
+@app.get("/api/filament-profiles")
+def api_list_filament_profiles() -> list[dict[str, str]]:
+    """Return available filament profiles for filament_remap rules."""
+    from profile_loader import list_filament_profiles, load_filament_profile
+    profiles = list_filament_profiles(FILAMENT_PROFILES_DIR)
+    result = []
+    for p in profiles:
+        result.append({"id": p.id, "name": p.display_name})
+    return result
+
+
+@app.get("/api/filament-profiles/{name}")
+def api_get_filament_profile(name: str) -> dict:
+    """Return extracted filament keys from a filament profile."""
+    from profile_loader import load_filament_profile
+    from profile_loader import ProfileNotFoundError
+    try:
+        keys = load_filament_profile(name, FILAMENT_PROFILES_DIR)
+        return {"id": name, "keys": keys}
+    except ProfileNotFoundError as err:
+        raise HTTPException(404, detail=str(err))
+
+
 # ---------------------------------------------------------------------------
 # rules
 
@@ -326,6 +352,7 @@ def api_list_rules() -> list[dict[str, Any]]:
             "priority": r.priority,
             "match": r.match.model_dump(exclude_none=True),
             "overrides": r.overrides,
+            "filament_remap": r.filament_remap,
             "source_path": r.source_path,
         }
         for r in rules
@@ -630,6 +657,7 @@ async def api_convert(
             output_path=out_path,
             settings=settings,
             rules=rules,
+            filament_profiles_dir=FILAMENT_PROFILES_DIR,
         )
     except ProfileLoadError as err:
         telemetry.record_conversion(
@@ -789,6 +817,7 @@ async def api_convert_bambu(
             settings=settings,
             rules=rules,
             preserve_bambu_metadata=True,
+            filament_profiles_dir=FILAMENT_PROFILES_DIR,
         )
     except ProfileLoadError as err:
         _retain_failed_workdir(

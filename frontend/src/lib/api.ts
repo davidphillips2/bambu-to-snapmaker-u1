@@ -18,6 +18,7 @@ export interface RuleSummary {
   priority: number;
   match: Record<string, unknown>;
   overrides: Record<string, unknown>;
+  filament_remap: string | null;
   source_path: string | null;
 }
 

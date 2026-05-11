@@ -316,3 +316,65 @@ def resolve_profile(
         f"no reference profile with id {profile_id!r} "
         f"(have: {[d.id for d in profiles]})"
     )
+
+
+# -------- filament profile extraction -----------------------------------------
+
+
+def load_filament_profile(
+    name: str, filament_profiles_dir: Path
+) -> dict[str, Any]:
+    """Load filament keys from a .3mf in the filament_profiles directory.
+
+    Returns a dict of ``filament_*`` keys extracted from the first slot in
+    project_settings.config. Keys are returned as-is (arrays stay arrays,
+    scalars stay scalars). ``filament_colour`` is excluded (preserved from
+    source).
+
+    Raises ProfileNotFoundError if no matching .3mf exists.
+    Raises ProfileLoadError if the file is unreadable.
+    """
+    # Match by filename stem (same id logic as profiles).
+    target_id = "-".join(name.strip().lower().split())
+    matches = sorted(filament_profiles_dir.glob("*.3mf"))
+    path = None
+    for p in matches:
+        if _profile_id_from_name(p) == target_id:
+            path = p
+            break
+    if path is None:
+        # Fallback: try exact filename
+        candidate = filament_profiles_dir / f"{name}.3mf"
+        if candidate.exists():
+            path = candidate
+        else:
+            raise ProfileNotFoundError(
+                f"no filament profile matching {name!r} in {filament_profiles_dir}"
+            )
+
+    settings = read_project_settings(path)
+
+    # Extract all filament_* keys from slot 0.
+    result: dict[str, Any] = {}
+    for key, value in settings.items():
+        if not key.startswith("filament_"):
+            continue
+        if key == "filament_colour":
+            continue  # always preserve source colours
+        # Arrays: take slot-0 value. Scalars: take as-is.
+        if isinstance(value, list):
+            result[key] = value[0] if value else value
+        else:
+            result[key] = value
+
+    return result
+
+
+def list_filament_profiles(filament_profiles_dir: Path) -> list[ProfileDescriptor]:
+    """List available filament profiles in the given directory."""
+    if not filament_profiles_dir.exists():
+        return []
+    return [
+        _descriptor(p, source="filament")
+        for p in sorted(filament_profiles_dir.glob("*.3mf"))
+    ]

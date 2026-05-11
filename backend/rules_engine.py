@@ -229,3 +229,30 @@ def apply_rules(
             )
         )
     return out, events
+
+
+def remap_filament_slot(
+    settings: dict[str, Any],
+    slot_index: int,
+    profile_keys: dict[str, Any],
+) -> dict[str, Any]:
+    """Replace filament identity/setting keys at *slot_index* with profile data.
+
+    Takes the full project_settings dict, writes profile values into the
+    filament arrays at the given slot position.  ``filament_colour`` is
+    never overwritten.  Returns a new dict (non-mutating).
+    """
+    out = dict(settings)
+    for key, value in profile_keys.items():
+        existing = out.get(key)
+        if isinstance(existing, list):
+            # Pad array to cover slot_index if needed.
+            arr = list(existing)
+            while len(arr) <= slot_index:
+                arr.append(arr[-1] if arr else value)
+            arr[slot_index] = value
+            out[key] = arr
+        else:
+            # Scalar — just overwrite.
+            out[key] = value
+    return out

@@ -39,13 +39,14 @@ COPY rules/ ./rules.builtin/
 COPY --from=frontend-build /build/frontend/dist ./frontend/dist
 
 # Create runtime directories (volumes will be mounted over these).
-RUN mkdir -p /app/user_profiles /app/rules /app/tmp /app/outputs /app/feedback /app/bambu_profiles
+RUN mkdir -p /app/user_profiles /app/rules /app/tmp /app/outputs /app/feedback /app/bambu_profiles /app/filament_profiles
 
 # Environment defaults (override in docker-compose or at run time).
 ENV PYTHONPATH=/app/backend \
     U13MF_APP_ROOT=/app \
     U13MF_PROFILES=/app/profiles \
     U13MF_BAMBU_PROFILES=/app/bambu_profiles \
+    U13MF_FILAMENT_PROFILES=/app/filament_profiles \
     U13MF_FEEDBACK=/app/feedback \
     U13MF_USER_PROFILES=/app/user_profiles \
     U13MF_RULES=/app/rules \
