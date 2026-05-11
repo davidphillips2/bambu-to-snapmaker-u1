@@ -22,4 +22,12 @@ if [ -d /app/profiles.builtin ]; then
     rm -rf /app/profiles.builtin
 fi
 
+# Seed bind-mounted rules with built-in ones, skip files that already exist.
+if [ -d /app/rules.builtin ]; then
+    mkdir -p /app/rules
+    cp -n /app/rules.builtin/* /app/rules/ 2>/dev/null || true
+    chown -R "${UID_TARGET}:${GID_TARGET}" /app/rules 2>/dev/null || true
+    rm -rf /app/rules.builtin
+fi
+
 exec /usr/bin/tini -- gosu "${UID_TARGET}:${GID_TARGET}" "$@"
