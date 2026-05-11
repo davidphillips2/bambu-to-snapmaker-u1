@@ -26,6 +26,8 @@ services:
       # Feedback submissions — persisted on host.
       - ./feedback:/app/feedback
     environment:
+      APP_UID: "${APP_UID:-1000}"
+      APP_GID: "${APP_GID:-1000}"
       MAX_UPLOAD_MB: "${MAX_UPLOAD_MB:-200}"
       CLEANUP_TEMP_AFTER_SECONDS: "${CLEANUP_TEMP_AFTER_SECONDS:-300}"
       RETAIN_FAILED_FILES: "${RETAIN_FAILED_FILES:-false}"

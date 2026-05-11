@@ -1,0 +1,171 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Bambu-to-Snapmaker-U1</Name>
+  <Repository>ghcr.io/davidphillips2/bambu-to-snapmaker-u1:latest</Repository>
+  <Registry>https://github.com/davidphillips2/bambu-to-snapmaker-u1/pkgs/container/bambu-to-snapmaker-u1</Registry>
+  <Network>bridge</Network>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://forums.unraid.net/topic/XXXXX/</Support>
+  <Project>https://github.com/thadius83/bambu-to-snapmaker-u1</Project>
+  <Overview>
+    Self-hosted web app that converts Bambu Lab .3mf project files into
+    Snapmaker U1-compatible .3mf files. Drag and drop a Bambu .3mf in,
+    get a U1-ready .3mf out. Also supports experimental Orca, PrusaSlicer,
+    and Cura .3mf imports. No accounts, no database.
+  </Overview>
+  <Category>Productivity:</Category>
+  <WebUI>http://[IP]:[PORT:8080]</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/davidphillips2/bambu-to-snapmaker-u1/main/unraid/bambu-to-snapmaker-u1.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/davidphillips2/bambu-to-snapmaker-u1/main/unraid/icon.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled></DateInstalled>
+  <DonateText>Buy Me a Coffee</DonateText>
+  <DonateLink>https://www.buymeacoffee.com/jdau</DonateLink>
+  <Requires/>
+
+  <Config
+    Name="Web UI Port"
+    Target="8080"
+    Default="8084"
+    Mode="tcp"
+    Description="The port for the converter web interface"
+    Type="Port"
+    Display="always"
+    Required="true"
+    Mask="false">8084</Config>
+
+  <Config
+    Name="AppData / Profiles"
+    Target="/app/profiles"
+    Default="/mnt/user/appdata/bambu-to-snapmaker-u1/profiles"
+    Mode="rw"
+    Description="Reference profiles. Built-in profiles are seeded automatically on first run."
+    Type="Path"
+    Display="always"
+    Required="true"
+    Mask="false">/mnt/user/appdata/bambu-to-snapmaker-u1/profiles</Config>
+
+  <Config
+    Name="User Profiles"
+    Target="/app/user_profiles"
+    Default="/mnt/user/appdata/bambu-to-snapmaker-u1/user_profiles"
+    Mode="rw"
+    Description="User-supplied reference profile overrides"
+    Type="Path"
+    Display="always"
+    Required="false"
+    Mask="false">/mnt/user/appdata/bambu-to-snapmaker-u1/user_profiles</Config>
+
+  <Config
+    Name="Filament Rules"
+    Target="/app/rules"
+    Default="/mnt/user/appdata/bambu-to-snapmaker-u1/rules"
+    Mode="rw"
+    Description="YAML filament-tuning rules (editable from web UI)"
+    Type="Path"
+    Display="always"
+    Required="false"
+    Mask="false">/mnt/user/appdata/bambu-to-snapmaker-u1/rules</Config>
+
+  <Config
+    Name="Bambu Profiles"
+    Target="/app/bambu_profiles"
+    Default="/mnt/user/appdata/bambu-to-snapmaker-u1/bambu_profiles"
+    Mode="rw"
+    Description="Bambu target reference profiles for Bambu-to-Bambu flow"
+    Type="Path"
+    Display="advanced"
+    Required="false"
+    Mask="false">/mnt/user/appdata/bambu-to-snapmaker-u1/bambu_profiles</Config>
+
+  <Config
+    Name="Temp Output"
+    Target="/app/tmp"
+    Default="/mnt/user/appdata/bambu-to-snapmaker-u1/tmp"
+    Mode="rw"
+    Description="Converted output files (auto-cleaned)"
+    Type="Path"
+    Display="advanced"
+    Required="false"
+    Mask="false">/mnt/user/appdata/bambu-to-snapmaker-u1/tmp</Config>
+
+  <Config
+    Name="Failed Temp"
+    Target="/app/tmp_failed"
+    Default="/mnt/user/appdata/bambu-to-snapmaker-u1/tmp_failed"
+    Mode="rw"
+    Description="Retained failed conversion workdirs"
+    Type="Path"
+    Display="advanced"
+    Required="false"
+    Mask="false">/mnt/user/appdata/bambu-to-snapmaker-u1/tmp_failed</Config>
+
+  <Config
+    Name="Feedback"
+    Target="/app/feedback"
+    Default="/mnt/user/appdata/bambu-to-snapmaker-u1/feedback"
+    Mode="rw"
+    Description="User feedback submissions"
+    Type="Path"
+    Display="advanced"
+    Required="false"
+    Mask="false">/mnt/user/appdata/bambu-to-snapmaker-u1/feedback</Config>
+
+  <Config
+    Name="PUID"
+    Target="APP_UID"
+    Default="99"
+    Mode=""
+    Description="User ID for file permissions (Unraid default: 99)"
+    Type="Variable"
+    Display="always"
+    Required="false"
+    Mask="false">99</Config>
+
+  <Config
+    Name="PGID"
+    Target="APP_GID"
+    Default="100"
+    Mode=""
+    Description="Group ID for file permissions (Unraid default: 100)"
+    Type="Variable"
+    Display="always"
+    Required="false"
+    Mask="false">100</Config>
+
+  <Config
+    Name="Max Upload (MB)"
+    Target="MAX_UPLOAD_MB"
+    Default="200"
+    Mode=""
+    Description="Maximum upload file size in megabytes"
+    Type="Variable"
+    Display="always"
+    Required="false"
+    Mask="false">200</Config>
+
+  <Config
+    Name="Cleanup After (seconds)"
+    Target="CLEANUP_TEMP_AFTER_SECONDS"
+    Default="300"
+    Mode=""
+    Description="Auto-delete converted files after this many seconds"
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false">300</Config>
+
+  <Config
+    Name="Retain Failed Files"
+    Target="RETAIN_FAILED_FILES"
+    Default="false"
+    Mode=""
+    Description="Keep failed conversion workdirs for debugging"
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false">false</Config>
+</Container>
