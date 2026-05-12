@@ -59,17 +59,22 @@ No accounts, no database, no external dependencies beyond Docker.
 5. **Filament rules** — YAML-based matching on filament name / vendor / type.
    Applies per-key overrides (speed, accel, temperature). Editable in the
    browser without a restart.
-6. **Filament slot remap** — preserves source colour array order exactly
+6. **Filament remap** — replace detected filaments with profiles from your
+   `filament_profiles/` directory. Toggle on in settings, pick a replacement
+   per slot, and the converter swaps identity, temps, fan, density — everything
+   except colour. Can also be triggered automatically via the `filament_remap`
+   field in YAML rules.
+7. **Filament slot remap** — preserves source colour array order exactly
    (slot N stays at slot N). Painted-face colour assignments are preserved via
    mesh paint data (`paint_color`) where the source format provides it.
-7. **Filament swap pauses** (auto-enabled for >4 colours) — detects when a
+8. **Filament swap pauses** (auto-enabled for >4 colours) — detects when a
    physical toolhead must switch spools mid-print and inserts M600 pause
    elements one full layer before each swap, with a colour-coded swap guide
    in the post-conversion diff view.
-8. **Slice cache strip** — removes `Metadata/plate_*.gcode` and
+9. **Slice cache strip** — removes `Metadata/plate_*.gcode` and
    `plate_*.json` so Snapmaker Orca is forced to re-slice rather than use
    stale Bambu output.
-9. **Sliced-only guard** — rejects `.gcode.3mf` uploads that contain plate
+10. **Sliced-only guard** — rejects `.gcode.3mf` uploads that contain plate
    G-code but no editable model geometry, so users get a clear upload error
    instead of a tiny output file with no objects.
 
@@ -81,6 +86,7 @@ The diff view after conversion shows every change made before you download.
 |---|---|
 | `./user_profiles` | Extra U1 reference `.3mf` files. Any file here with the same name as a bundled profile shadows it. |
 | `./rules` | YAML filament-tuning rules. Editable live via the Rules page in the UI. |
+| `./filament_profiles` | Target filament `.3mf` profiles for filament remap. Drop a project file with your desired filament configured — referenced by filename stem in rules or the UI. |
 | `./tmp` | Converted files retained for 5 minutes after the conversion completes. |
 
 ## Adding reference profiles
@@ -120,6 +126,7 @@ match:
   filament_vendor: "Bambu Lab"         # exact match (optional)
   filament_type: PLA                   # exact match (optional)
   base_profile_contains: "0.20mm"      # substring of print_settings_id (optional)
+filament_remap: my-sunlu-pla           # optional: filename stem from filament_profiles/
 overrides:
   outer_wall_speed: 80                 # any process-settings key: value
   default_acceleration: 3000
@@ -130,6 +137,15 @@ enabled: true
 **Matching logic:** all specified conditions must be true simultaneously
 (AND). Multiple rules can match; they apply in ascending `priority` order so
 higher-priority rules overwrite lower ones on conflicting keys.
+
+**Filament remap:** if `filament_remap` is set, the matched filament slot
+is fully replaced with the profile from `filament_profiles/` (identity,
+temperatures, fan, density — colour preserved). Regular `overrides` still
+apply on top.
+
+**Interactive remap:** you can also remap filaments per-conversion without
+rules — toggle "Remap filaments" in the settings, then pick a replacement
+profile for each detected filament slot.
 
 **Scope:** rules apply globally to the process profile, not per-object.
 Per-object scoping is a planned extension.
@@ -214,6 +230,7 @@ frontend/src/
 
 profiles/           Bundled U1 reference 3mf files (committed)
 user_profiles/      Mounted volume — user reference overrides
+filament_profiles/  Mounted volume — target filament .3mf profiles for remap
 rules/              Mounted volume — YAML filament rules
 tmp/                Per-request working dirs, auto-cleaned
 ```
