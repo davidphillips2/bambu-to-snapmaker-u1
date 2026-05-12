@@ -40,6 +40,7 @@ services:
       GA_MEASUREMENT_ID: "${GA_MEASUREMENT_ID:-}"
       CF_BEACON_TOKEN: "${CF_BEACON_TOKEN:-}"
       DOMAINHOST: "${DOMAINHOST:-localhost}"
+      SLICER_API_URL: "${SLICER_API_URL:-}"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health')"]

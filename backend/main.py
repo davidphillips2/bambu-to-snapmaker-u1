@@ -67,6 +67,7 @@ from rules_engine import (
     load_rules,
 )
 from security import SECURITY_HEADERS, render_privacy_html
+import httpx
 
 logger = logging.getLogger("u13mf")
 
@@ -112,6 +113,7 @@ FRONTEND_DIST = Path(
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "100"))
 CLEANUP_AFTER_SECONDS = int(os.environ.get("CLEANUP_TEMP_AFTER_SECONDS", "300"))
 SITE_URL = "https://" + os.environ.get("DOMAINHOST", "u1convert.com").rstrip("/")
+SLICER_API_URL = os.environ.get("SLICER_API_URL", "").rstrip("/")
 FAILED_CLEANUP_AFTER_SECONDS = int(
     os.environ.get("CLEANUP_FAILED_TEMP_AFTER_SECONDS", str(7 * 24 * 60 * 60))
 )
@@ -895,6 +897,107 @@ def api_download(job_id: str) -> FileResponse:
         filename=path.name,
         media_type="application/octet-stream",
     )
+
+
+# ---------------------------------------------------------------------------
+# slice-and-send: convert → slice → upload to Moonraker
+
+
+@app.post("/api/slice-and-send")
+async def api_slice_and_send(
+    file: UploadFile = File(...),
+    reference_profile: str = Form(...),
+    moonraker_url: str = Form(...),
+    apply_rules: bool = Form(True),
+    clamp_speeds: bool = Form(True),
+    preserve_color_painting: bool = Form(True),
+    advanced_overrides: str = Form("{}"),
+    slot_map: str = Form("{}"),
+    filament_remaps: str = Form("{}"),
+    insert_swap_pauses: str = Form("false"),
+    start_print: bool = Form(False),
+) -> JSONResponse:
+    """Convert a Bambu 3MF → U1 3MF → slice → upload gcode to Moonraker.
+
+    Requires SLICER_API_URL env var pointing to the slicer container
+    (e.g. http://snapmaker-slicer:8080).
+    """
+    if not SLICER_API_URL:
+        raise HTTPException(
+            503,
+            detail="SLICER_API_URL not configured — slicing is unavailable",
+        )
+
+    # --- Step 1: Convert (reuse the existing convert pipeline) ---
+    convert_resp = await api_convert(
+        file=file,
+        reference_profile=reference_profile,
+        apply_rules=apply_rules,
+        clamp_speeds=clamp_speeds,
+        preserve_color_painting=preserve_color_painting,
+        advanced_overrides=advanced_overrides,
+        slot_map=slot_map,
+        filament_remaps=filament_remaps,
+        insert_swap_pauses=insert_swap_pauses,
+    )
+    job_id = convert_resp.body
+    if isinstance(job_id, bytes):
+        import json as _json
+        body = _json.loads(job_id)
+    else:
+        body = job_id
+
+    job_id = body["job_id"]
+    download_name = body["download_name"]
+
+    # --- Step 2: Read the converted 3MF ---
+    job = _get_job(job_id)
+    if not job:
+        raise HTTPException(404, detail="conversion job lost")
+    converted_path: Path = job["output_path"]
+    if not converted_path.exists():
+        raise HTTPException(410, detail="converted file was cleaned up")
+
+    try:
+        converted_bytes = converted_path.read_bytes()
+
+        # --- Step 3: Forward to slicer API ---
+        async with httpx.AsyncClient(timeout=600) as client:
+            slice_resp = await client.post(
+                f"{SLICER_API_URL}/slice-and-send",
+                files={"file": (download_name, converted_bytes, "application/zip")},
+                data={
+                    "moonraker_url": moonraker_url,
+                    "start_print": "true" if start_print else "false",
+                },
+                timeout=600,
+            )
+
+        if slice_resp.status_code >= 300:
+            raise HTTPException(
+                502,
+                detail={
+                    "error": "slicer or Moonraker rejected the request",
+                    "upstream_status": slice_resp.status_code,
+                    "upstream_body": slice_resp.text[:2000],
+                },
+            )
+
+        slicer_result = slice_resp.json()
+
+        return JSONResponse({
+            "status": "ok",
+            "job_id": job_id,
+            "slicer_result": slicer_result,
+            "diff": body.get("diff"),
+        })
+
+    finally:
+        # Cleanup conversion job
+        with _JOBS_LOCK:
+            _JOBS.pop(job_id, None)
+        if converted_path.exists():
+            shutil.rmtree(converted_path.parent, ignore_errors=True)
 
 # ---------------------------------------------------------------------------
 # helpers
